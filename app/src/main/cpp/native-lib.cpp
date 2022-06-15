@@ -2,7 +2,7 @@
 #include <string>
 #include "ZPlayer.h"
 
-ZPlayer *ffmpeg = nullptr;
+ZPlayer *zPlayer = nullptr;
 JavaVM *javaVm = nullptr;
 JavaCallHelper *helper = nullptr;
 
@@ -16,22 +16,25 @@ JNIEXPORT jlong JNICALL
 Java_com_zxj_zplayer_ZPlayer_nativeInit(JNIEnv *env, jobject thiz) {
     //创建播放器
     helper = new JavaCallHelper(javaVm,env,thiz);
-    ffmpeg = new ZPlayer(helper);
-    return 0;
+    zPlayer = new ZPlayer(helper);
+    return (jlong)zPlayer;
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_zxj_zplayer_ZPlayer_setDataSource(JNIEnv *env, jobject thiz, jlong native_handle,
+Java_com_zxj_zplayer_ZPlayer_setDataSource(JNIEnv *env, jobject thiz, jlong nativeHandle,
                                            jstring path) {
-
+    const char *dataSource = env->GetStringUTFChars(path, nullptr);
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(nativeHandle);
+    zPlayer->setDataSource(dataSource);
+    env->ReleaseStringUTFChars(path,dataSource);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_zxj_zplayer_ZPlayer_nativePrepare(JNIEnv *env, jobject thiz, jlong native_handle) {
-
-
+Java_com_zxj_zplayer_ZPlayer_nativePrepare(JNIEnv *env, jobject thiz, jlong nativeHandle) {
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(nativeHandle);
+    zPlayer->prepare();
 }
 
 extern "C"

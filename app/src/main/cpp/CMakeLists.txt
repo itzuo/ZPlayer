@@ -12,7 +12,6 @@ set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -L${RTMP}/libs/${CMAKE_ANDROID_ARCH_ABI
 
 file(GLOB source_file *.cpp)
 
-message("source_file = ${source_file}")
 
 add_library(
         z-player
@@ -23,7 +22,9 @@ add_library(
 
 message("CMAKE_ANDROID_ARCH_ABI====${CMAKE_ANDROID_ARCH_ABI}")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${CMAKE_SOURCE_DIR}/libs/${CMAKE_ANDROID_ARCH_ABI}")
+#include_directories(${CMAKE_SOURCE_DIR}/include)
+
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -L${CMAKE_SOURCE_DIR}/libs/${CMAKE_ANDROID_ARCH_ABI}")
 #set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -L${CMAKE_SOURCE_DIR}/libs/${ANDROID_API}")
 
 find_library(

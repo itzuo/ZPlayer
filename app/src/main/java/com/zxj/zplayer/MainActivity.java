@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat;
 
 import android.Manifest;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
@@ -21,6 +22,7 @@ public class MainActivity extends AppCompatActivity {
 
     private ActivityMainBinding binding;
     private int PERMISSION_REQUEST = 0x1001;
+    private ZPlayer mPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -31,10 +33,35 @@ public class MainActivity extends AppCompatActivity {
 
         checkPermission();
 
-        ZPlayer mPlayer = new ZPlayer();
+        mPlayer = new ZPlayer();
         getLifecycle().addObserver(mPlayer);
         mPlayer.setDataSource("/sdcard/demo.mp4");
 
+        mPlayer.setOnPrepareListener(new ZPlayer.OnPrepareListener() {
+            @Override
+            public void onPrepare() {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        binding.tvState.setTextColor(Color.GREEN);
+                        binding.tvState.setText("恭喜init初始化成功");
+                    }
+                });
+//                mPlayer.start();
+            }
+        });
+        mPlayer.setOnErrorListener(new ZPlayer.OnErrorListener() {
+            @Override
+            public void onError(String errorCode) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        binding.tvState.setTextColor(Color.RED);
+                        binding.tvState.setText(errorCode);
+                    }
+                });
+            }
+        });
     }
 
     private void checkPermission() {

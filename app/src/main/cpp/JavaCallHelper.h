@@ -6,6 +6,7 @@
 #define ZPLAYER_JAVACALLHELPER_H
 
 #include <jni.h>
+#include "macro.h"
 
 class JavaCallHelper {
 
@@ -13,12 +14,12 @@ public:
     JavaCallHelper(JavaVM *vm, JNIEnv *env, jobject instace);
     ~JavaCallHelper();
     //回调Java
-    void onError(int thread,int errorCode);
+    void onError(int thread,int errorCode,char * ffmpegError);
     void onPrepare(int thread);
 
 private:
-    JavaVM *vm;
-    JNIEnv *env;
+    JavaVM *vm  = 0;   // 只有他 才能 跨越线程
+    JNIEnv *env = 0;
     jobject instace;
     jmethodID onErrorId;
     jmethodID onPrepareId;

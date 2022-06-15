@@ -19,6 +19,8 @@ public class ZPlayer implements LifecycleObserver {
     }
 
     private final long nativeHandle;
+    private OnPrepareListener listener;
+    private OnErrorListener onErrorListener;
 
     public ZPlayer() {
         nativeHandle = nativeInit();
@@ -45,6 +47,7 @@ public class ZPlayer implements LifecycleObserver {
      * 开始播放
      */
     public void start(){
+        Log.e(TAG,"start");
         nativeStart(nativeHandle);
     }
 
@@ -64,6 +67,68 @@ public class ZPlayer implements LifecycleObserver {
         nativeRelease(nativeHandle);
     }
 
+    /**
+     * JavaCallHelper 会反射调用此方法
+     * @param errorCode
+     */
+    public void onError(int errorCode, String ffmpegError){
+        Log.e(TAG,"Java接收到回调了->onError:"+errorCode);
+        String title = "\nFFmpeg给出的错误如下:\n";
+
+        String msg = null;
+        switch (errorCode){
+            case Constant.FFMPEG_CAN_NOT_OPEN_URL:
+                msg = "打不开视频"+title+ ffmpegError;
+                break;
+            case Constant.FFMPEG_CAN_NOT_FIND_STREAMS:
+                msg = "找不到流媒体"+title+ ffmpegError;
+                break;
+            case Constant.FFMPEG_FIND_DECODER_FAIL:
+                msg = "找不到解码器"+title+ ffmpegError;
+                break;
+            case Constant.FFMPEG_ALLOC_CODEC_CONTEXT_FAIL:
+                msg = "无法根据解码器创建上下文"+title+ ffmpegError;
+                break;
+            case Constant.FFMPEG_CODEC_CONTEXT_PARAMETERS_FAIL:
+                msg = "根据流信息 配置上下文参数失败"+title+ ffmpegError;
+                break;
+            case Constant.FFMPEG_OPEN_DECODER_FAIL:
+                msg = "打开解码器失败"+title+ ffmpegError;
+                break;
+            case Constant.FFMPEG_NOMEDIA:
+                msg = "没有音视频"+title+ ffmpegError;
+                break;
+        }
+        if(onErrorListener != null ){
+            onErrorListener.onError(msg);
+        }
+    }
+
+    /**
+     * JavaCallHelper 会反射调用此方法
+     */
+    public void onPrepare(){
+        Log.e(TAG,"Java接收到回调了->onPrepare");
+        if(listener != null){
+            listener.onPrepare();
+        }
+    }
+
+    public interface OnPrepareListener{
+        void onPrepare();
+    }
+
+    public void setOnPrepareListener(OnPrepareListener listener){
+        this.listener = listener;
+    }
+
+    public interface OnErrorListener{
+        void onError(String errorCode);
+    }
+
+    public void setOnErrorListener(OnErrorListener listener){
+        this.onErrorListener = listener;
+    }
 
     private native long nativeInit();
     private native void setDataSource(long nativeHandle, String path);
