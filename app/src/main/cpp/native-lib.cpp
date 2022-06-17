@@ -5,6 +5,8 @@
 ZPlayer *zPlayer = nullptr;
 JavaVM *javaVm = nullptr;
 JavaCallHelper *helper = nullptr;
+ANativeWindow *window = nullptr;
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int JNI_OnLoad(JavaVM *vm,void *r){
     javaVm = vm;
@@ -22,39 +24,44 @@ Java_com_zxj_zplayer_ZPlayer_nativeInit(JNIEnv *env, jobject thiz) {
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_zxj_zplayer_ZPlayer_setDataSource(JNIEnv *env, jobject thiz, jlong nativeHandle,
+Java_com_zxj_zplayer_ZPlayer_setDataSource(JNIEnv *env, jobject thiz, jlong native_handle,
                                            jstring path) {
     const char *dataSource = env->GetStringUTFChars(path, nullptr);
-    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(nativeHandle);
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
     zPlayer->setDataSource(dataSource);
     env->ReleaseStringUTFChars(path,dataSource);
 }
 
 extern "C"
 JNIEXPORT void JNICALL
-Java_com_zxj_zplayer_ZPlayer_nativePrepare(JNIEnv *env, jobject thiz, jlong nativeHandle) {
-    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(nativeHandle);
+Java_com_zxj_zplayer_ZPlayer_nativePrepare(JNIEnv *env, jobject thiz, jlong native_handle) {
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
     zPlayer->prepare();
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zxj_zplayer_ZPlayer_nativeStart(JNIEnv *env, jobject thiz, jlong native_handle) {
-
-
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
+    zPlayer->start();
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zxj_zplayer_ZPlayer_nativeStop(JNIEnv *env, jobject thiz, jlong native_handle) {
-
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
+    zPlayer->stop();
+    if(helper){
+        DELETE(helper);
+    }
 
 }
 
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zxj_zplayer_ZPlayer_nativeRelease(JNIEnv *env, jobject thiz, jlong native_handle) {
-
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
+    zPlayer->release();
 
 }
 
@@ -62,6 +69,14 @@ extern "C"
 JNIEXPORT void JNICALL
 Java_com_zxj_zplayer_ZPlayer_nativeSetSurface(JNIEnv *env, jobject thiz, jlong native_handle,
                                               jobject surface) {
-
-
+    pthread_mutex_lock(&mutex);
+    //先释放之前的显示窗口
+    if(window){
+        ANativeWindow_release(window);
+        window = nullptr;
+    }
+    window = ANativeWindow_fromSurface(env,surface);
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
+    zPlayer->setWindow(window);
+    pthread_mutex_unlock(&mutex);
 }

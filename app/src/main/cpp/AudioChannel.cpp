@@ -3,3 +3,25 @@
 //
 
 #include "AudioChannel.h"
+
+AudioChannel::AudioChannel(int streamIndex, AVCodecContext *codecContext) : BaseChannel(streamIndex,
+                                                                                        codecContext) {
+
+}
+
+AudioChannel::~AudioChannel() {
+
+}
+
+void AudioChannel::decode(){
+
+}
+
+void AudioChannel::play() {
+
+}
+
+void AudioChannel::stop() {
+
+}
+

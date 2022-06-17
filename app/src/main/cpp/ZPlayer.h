@@ -29,6 +29,8 @@ public:
 
     void prepare();
 
+    void setWindow(ANativeWindow *window);
+
     void start();
 
     void stop();
@@ -50,7 +52,7 @@ private:
     bool isPlaying;
     pthread_t startTask;
 
-//    ANativeWindow *window = 0;
+    ANativeWindow *window = 0;
 
     int duration;
 };

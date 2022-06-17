@@ -2,6 +2,8 @@ package com.zxj.zplayer;
 
 import android.util.Log;
 import android.view.Surface;
+import android.view.SurfaceHolder;
+import android.view.SurfaceView;
 
 import androidx.lifecycle.Lifecycle;
 import androidx.lifecycle.LifecycleObserver;
@@ -11,7 +13,7 @@ import androidx.lifecycle.OnLifecycleEvent;
  * @author zuo
  * @date 2022/6/15/015 14:33
  */
-public class ZPlayer implements LifecycleObserver {
+public class ZPlayer implements LifecycleObserver, SurfaceHolder.Callback {
     private static final String TAG = ZPlayer.class.getSimpleName();
 
     static {
@@ -21,9 +23,22 @@ public class ZPlayer implements LifecycleObserver {
     private final long nativeHandle;
     private OnPrepareListener listener;
     private OnErrorListener onErrorListener;
+    private SurfaceHolder mHolder;
 
     public ZPlayer() {
         nativeHandle = nativeInit();
+    }
+
+    /**
+     * 设置播放显示的画布
+     * @param surfaceView
+     */
+    public void setSurfaceView(SurfaceView surfaceView) {
+        if (this.mHolder != null) {
+            mHolder.removeCallback(this); // 清除上一次的
+        }
+        mHolder = surfaceView.getHolder();
+        mHolder.addCallback(this);
     }
 
     /**
@@ -39,7 +54,7 @@ public class ZPlayer implements LifecycleObserver {
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     public void prepare() {
-        Log.e(TAG,"prepare");
+        Log.e(TAG,"ZPlayer->prepare");
         nativePrepare(nativeHandle);
     }
 
@@ -47,7 +62,7 @@ public class ZPlayer implements LifecycleObserver {
      * 开始播放
      */
     public void start(){
-        Log.e(TAG,"start");
+        Log.e(TAG,"ZPlayer->start");
         nativeStart(nativeHandle);
     }
 
@@ -56,14 +71,14 @@ public class ZPlayer implements LifecycleObserver {
      */
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     public void stop(){
-        Log.e(TAG,"stop");
+        Log.e(TAG,"ZPlayer->stop");
         nativeStop(nativeHandle);
     }
 
     @OnLifecycleEvent(Lifecycle.Event.ON_DESTROY)
     public void release(){
-        Log.e(TAG,"release");
-//        mHolder.removeCallback(this);
+        Log.e(TAG,"ZPlayer->release");
+        mHolder.removeCallback(this);
         nativeRelease(nativeHandle);
     }
 
@@ -112,6 +127,22 @@ public class ZPlayer implements LifecycleObserver {
         if(listener != null){
             listener.onPrepare();
         }
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder surfaceHolder) {
+        Log.e(TAG,"ZPlayer->surfaceCreated");
+    }
+
+    @Override
+    public void surfaceChanged(SurfaceHolder surfaceHolder, int i, int i1, int i2) {
+        Log.e(TAG,"ZPlayer->surfaceChanged");
+        nativeSetSurface(nativeHandle,surfaceHolder.getSurface());
+    }
+
+    @Override
+    public void surfaceDestroyed(SurfaceHolder surfaceHolder) {
+        Log.e(TAG,"ZPlayer->surfaceDestroyed");
     }
 
     public interface OnPrepareListener{

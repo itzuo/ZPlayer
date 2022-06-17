@@ -35,8 +35,8 @@ public class MainActivity extends AppCompatActivity {
 
         mPlayer = new ZPlayer();
         getLifecycle().addObserver(mPlayer);
+        mPlayer.setSurfaceView(binding.surfaceView);
         mPlayer.setDataSource("/sdcard/demo.mp4");
-
         mPlayer.setOnPrepareListener(new ZPlayer.OnPrepareListener() {
             @Override
             public void onPrepare() {
@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
                         binding.tvState.setText("恭喜init初始化成功");
                     }
                 });
-//                mPlayer.start();
+                mPlayer.start();
             }
         });
         mPlayer.setOnErrorListener(new ZPlayer.OnErrorListener() {

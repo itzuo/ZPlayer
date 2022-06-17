@@ -4,10 +4,17 @@
 
 #ifndef ZPLAYER_AUDIOCHANNEL_H
 #define ZPLAYER_AUDIOCHANNEL_H
+#include "BaseChannel.h"
 
+class AudioChannel : public BaseChannel{
+public:
+    AudioChannel(int streamIndex, AVCodecContext * codecContext);
 
-class AudioChannel {
+    virtual ~AudioChannel();
 
+    virtual void play();
+    virtual void stop();
+    virtual void decode();
 };
 
 

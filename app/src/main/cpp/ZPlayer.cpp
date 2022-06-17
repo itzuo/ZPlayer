@@ -28,28 +28,15 @@ void ZPlayer::setDataSource(const char *_dataSource) {
 
 // void* (*__start_routine)(void*)
 void *task_prepare(void *args){
-    LOGE("==task_prepare==:");
+    LOGE("==task_prepare==");
     ZPlayer *player = static_cast<ZPlayer *>(args);
     player->_prepare();
-    return 0;
+    return nullptr;
 }
 
 void ZPlayer::prepare() {
     LOGE("ZPlayer::prepare");
     pthread_create(&prepareTask, nullptr, task_prepare, this);
-    LOGE("ZPlayer::prepare==");
-}
-
-void ZPlayer::start() {
-
-}
-
-void ZPlayer::stop() {
-
-}
-
-void ZPlayer::release() {
-
 }
 
 void ZPlayer::_prepare() {
@@ -103,15 +90,15 @@ void ZPlayer::_prepare() {
         }
 
         //2、获得解码器上下文
-        AVCodecContext *codecContext = avcodec_alloc_context3(avCodec);
-        if (codecContext == nullptr) {
+        AVCodecContext *avCodecContext = avcodec_alloc_context3(avCodec);
+        if (avCodecContext == nullptr) {
             LOGE("创建解码上下文失败:%s", av_err2str(ret));
             callHelper->onError(THREAD_CHILD, FFMPEG_ALLOC_CODEC_CONTEXT_FAIL,av_err2str(ret));
             return;
         }
 
         //3、设置上下文内的一些参数 (context->width)
-        ret = avcodec_parameters_to_context(codecContext, codecpar);
+        ret = avcodec_parameters_to_context(avCodecContext, codecpar);
         if (ret < 0) {
             LOGE("设置解码上下文参数失败:%s", av_err2str(ret));
             callHelper->onError(THREAD_CHILD, FFMPEG_CODEC_CONTEXT_PARAMETERS_FAIL,av_err2str(ret));
@@ -119,7 +106,7 @@ void ZPlayer::_prepare() {
         }
 
         // 4、打开解码器
-        ret = avcodec_open2(codecContext, avCodec, 0);
+        ret = avcodec_open2(avCodecContext, avCodec, 0);
         if (ret != 0) {
             LOGE("打开解码器失败:%s", av_err2str(ret));
             callHelper->onError(THREAD_CHILD, FFMPEG_OPEN_DECODER_FAIL,av_err2str(ret));
@@ -128,7 +115,7 @@ void ZPlayer::_prepare() {
 
         //音频
         if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            audioChannel = new AudioChannel();
+            audioChannel = new AudioChannel(stream_index,avCodecContext);
         }else if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             //帧率： 单位时间内 需要显示多少个图像
             double fps = av_q2d(stream->avg_frame_rate);
@@ -139,9 +126,10 @@ void ZPlayer::_prepare() {
                 fps = av_q2d(av_guess_frame_rate(avFormatContext,stream,0));
             }
 
-            videoChannel = new VideoChannel();
-//            videoChannel = new VideoChannel(stream_index, callHelper, codecContext, stream->time_base, fps);
-//            videoChannel->setWindow(window);
+            LOGE("==stream_index==%d,avCodecContext=%p",stream_index,avCodecContext);
+            videoChannel = new VideoChannel(stream_index,avCodecContext);
+//            videoChannel = new VideoChannel(stream_index, callHelper, avCodecContext, stream->time_base, fps);
+            videoChannel->setWindow(window);
         }
     }
 
@@ -156,6 +144,72 @@ void ZPlayer::_prepare() {
     callHelper->onPrepare(THREAD_CHILD);
 }
 
+void *start_t(void *args){
+    LOGE("==start_t==");
+    ZPlayer *player = static_cast<ZPlayer *>(args);
+    player->_start();
+    return nullptr;
+}
+
+
+void ZPlayer::start() {
+    LOGE("ZPlayer::start");
+    //1、读取媒体源的数据
+    //2、根据数据类型放入Audio/VideoChannel的队列中
+    isPlaying = true;
+    if(videoChannel){
+        videoChannel->play();
+    }
+    if(audioChannel){
+//        audioChannel->play();
+    }
+    pthread_create(&startTask, nullptr,start_t,this);
+}
+
+/**
+ * 把视频和音频的压缩包（AVPacket *） 循环获取出来 加入到队列里面去
+ */
 void ZPlayer::_start() {
+    LOGE("_start被调用 %d",isPlaying);
+    //1、读取媒体数据包(音视频数据包)
+    while (isPlaying){
+        AVPacket *packet = av_packet_alloc();
+        // @return 0 if OK, < 0 on error or end of file
+        int ret = av_read_frame(avFormatContext,packet);
+
+        if(ret == 0){
+            if(videoChannel && videoChannel->streamIndex == packet->stream_index){
+                videoChannel->packetsQueue.enQueue(packet);
+            }if(audioChannel && audioChannel->streamIndex == packet->stream_index){
+//                audioChannel->packetsQueue.enQueue(packet);
+            }
+        }else if(ret == AVERROR_EOF){
+            //读取完成 但是可能还没播放完
+
+        }else{
+            // av_read_frame(formatContext,  packet); 出现了错误，结束当前循环
+            LOGE("读取数据包失败，返回:%d 错误描述:%s", ret, av_err2str(ret));
+            break;
+        }
+    }
+
+    isPlaying = false;
+    videoChannel->stop();
+    audioChannel->stop();
+}
+
+void ZPlayer::stop() {
 
 }
+
+void ZPlayer::release() {
+
+}
+
+void ZPlayer::setWindow(ANativeWindow *window) {
+    this->window = window;
+    if (videoChannel) {
+        videoChannel->setWindow(window);
+    }
+}
+
