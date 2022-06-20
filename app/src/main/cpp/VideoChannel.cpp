@@ -38,7 +38,7 @@ void VideoChannel::play() {
 }
 
 /**
- * 取出队列的压缩包,进行解码,解码后的原始包再push队列中去
+ * 取出队列的压缩包(AVPacket *),进行解码,解码后的原始包(AVFrame *)再push队列中去
  */
 void VideoChannel::decode() {
     AVPacket *packet = nullptr;
@@ -79,14 +79,14 @@ void VideoChannel::decode() {
         }
 
         //再开一个线程 来播放 (流畅度)
-        frameQueue.enQueue(frame);
+        frameQueue.enQueue(frame);// 加入队列--YUV数据
 
     }
     releaseAVPacket(&packet);
 }
 
 /**
- * 从队列取出原始包进行播放
+ * 从队列取出原始包(AVFrame *)进行播放
  */
 void VideoChannel::_play() {
     // 缩放、格式转换
@@ -196,7 +196,7 @@ void VideoChannel::_onDraw(uint8_t *dst_data, int dst_linesize, int width, int h
 
     //一行一行拷贝
     for (int i = 0; i < buffer.height; ++i) {
-        LOGE("dstLineSize=%d,dst_linesize=%d",dstLineSize,dst_linesize);
+//        LOGE("dstLineSize=%d,dst_linesize=%d",dstLineSize,dst_linesize);
         memcpy(dstData + i * dstLineSize, dst_data + i * dst_linesize, dst_linesize);
 //        memcpy(dstData + i * dstLineSize, dst_data + i * dst_linesize, dstLineSize);
     }

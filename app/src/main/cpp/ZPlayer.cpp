@@ -161,7 +161,7 @@ void ZPlayer::start() {
         videoChannel->play();
     }
     if(audioChannel){
-//        audioChannel->play();
+        audioChannel->play();
     }
     pthread_create(&startTask, nullptr,start_t,this);
 }
@@ -181,7 +181,7 @@ void ZPlayer::_start() {
             if(videoChannel && videoChannel->streamIndex == packet->stream_index){
                 videoChannel->packetsQueue.enQueue(packet);
             }if(audioChannel && audioChannel->streamIndex == packet->stream_index){
-//                audioChannel->packetsQueue.enQueue(packet);
+                audioChannel->packetsQueue.enQueue(packet);
             }
         }else if(ret == AVERROR_EOF){
             //读取完成 但是可能还没播放完
