@@ -29,7 +29,7 @@ private:
     int initOpenSL();
     int getPCMData();
     SLresult createEngine();
-    void _start();
+    void _OpenSLESStart();
 private:
     pthread_t audioDecodeTask;
     pthread_t audioPlayTask;
