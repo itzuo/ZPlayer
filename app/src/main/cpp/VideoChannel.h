@@ -11,7 +11,6 @@
 extern "C"{
 #include <libswscale/swscale.h> // 视频画面像素格式转换的模块
 #include <libavutil/imgutils.h>
-#include <libavutil/time.h>
 };
 
 class VideoChannel : public BaseChannel{

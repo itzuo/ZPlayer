@@ -173,6 +173,17 @@ void ZPlayer::_start() {
     LOGE("_start被调用 %d",isPlaying);
     //1、读取媒体数据包(音视频数据包)
     while (isPlaying){
+        // 内存泄漏关键点（控制packet队列大小，等待队列中的数据被消费）
+        // 这段代码不能写在av_read_frame之后，因为会出现丢包问题
+        if(videoChannel && videoChannel->packetsQueue.size() > 100){
+            av_usleep(10 * 1000); // 单位 ：microseconds 微妙 10毫秒
+            continue;
+        }
+        if(audioChannel && audioChannel->packetsQueue.size() > 100){
+            av_usleep(10 * 1000); // 单位 ：microseconds 微妙 10毫秒
+            continue;
+        }
+
         AVPacket *packet = av_packet_alloc();
         // @return 0 if OK, < 0 on error or end of file
         int ret = av_read_frame(avFormatContext,packet);
@@ -185,7 +196,10 @@ void ZPlayer::_start() {
             }
         }else if(ret == AVERROR_EOF){
             //读取完成 但是可能还没播放完
-
+            //内存泄漏点,表示读完了，要考虑释放播放完成，表示读完了 并不代表播放完毕
+            if(videoChannel->packetsQueue.empty() && audioChannel->packetsQueue.empty()){
+                break;// 队列的数据被音频视频全部播放完毕了
+            }
         }else{
             // av_read_frame(formatContext,  packet); 出现了错误，结束当前循环
             LOGE("读取数据包失败，返回:%d 错误描述:%s", ret, av_err2str(ret));

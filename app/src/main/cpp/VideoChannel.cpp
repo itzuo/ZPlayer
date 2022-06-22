@@ -43,6 +43,10 @@ void VideoChannel::play() {
 void VideoChannel::decode() {
     AVPacket *packet = nullptr;
     while (isPlaying) {
+        if(isPlaying && frameQueue.size() > 100){
+            av_usleep(10 * 1000);
+            continue;
+        }
         //取出一个数据包,阻塞
         // 1、能够取到数据
         // 2、停止播放
@@ -74,7 +78,9 @@ void VideoChannel::decode() {
         //需要更多的数据才能够进行解码
         if (ret == AVERROR(EAGAIN)) {
             continue;
-        } else if (ret < 0) {
+        } else if (ret != 0) {
+            // 内存泄漏点,解码视频的frame出错，马上释放，防止你在堆区开辟了空间
+            releaseAVFrame(&frame);
             break;
         }
 
