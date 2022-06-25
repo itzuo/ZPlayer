@@ -107,7 +107,7 @@ void AudioChannel::decode(){
         // 向解码器发送解码数据
         ret = avcodec_send_packet(avCodecContext, packet);
         // FFmpeg源码内部 缓存了一份packet副本，所以我才敢大胆的释放
-        releaseAVPacket(&packet);
+//        releaseAVPacket(&packet);// 放到后面释放
 
         if (ret == AVERROR(EAGAIN)) {
             //需要更多数据
@@ -123,14 +123,19 @@ void AudioChannel::decode(){
         if (ret == AVERROR(EAGAIN)) {
             continue;
         } else if (ret != 0) {
-            releaseAVFrame(&frame);
+            if(frame){
+                releaseAVFrame(&frame);
+            }
             break;
         }
 
         //再开一个线程 来播放 (流畅度)
         frameQueue.enQueue(frame);// 加入队列--PCM数据
 
+        av_packet_unref(packet);
+        releaseAVPacket(&packet);
     }
+    av_packet_unref(packet);
     releaseAVPacket(&packet);
 }
 

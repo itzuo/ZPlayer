@@ -63,7 +63,7 @@ void VideoChannel::decode() {
         // 向解码器发送解码数据
         ret = avcodec_send_packet(avCodecContext, packet);
         // FFmpeg源码内部 缓存了一份packet副本，所以我才敢大胆的释放
-        releaseAVPacket(&packet);
+//        releaseAVPacket(&packet);
 
         if (ret == AVERROR(EAGAIN)) {
             //需要更多数据
@@ -80,14 +80,18 @@ void VideoChannel::decode() {
             continue;
         } else if (ret != 0) {
             // 内存泄漏点,解码视频的frame出错，马上释放，防止你在堆区开辟了空间
-            releaseAVFrame(&frame);
+            if(frame){
+                releaseAVFrame(&frame);
+            }
             break;
         }
 
         //再开一个线程 来播放 (流畅度)
         frameQueue.enQueue(frame);// 加入队列--YUV数据
-
+        av_packet_unref(packet);
+        releaseAVPacket(&packet);
     }
+    av_packet_unref(packet);
     releaseAVPacket(&packet);
 }
 
