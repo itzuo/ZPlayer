@@ -113,9 +113,11 @@ void ZPlayer::_prepare() {
             return;
         }
 
+        AVRational timeBase = stream->time_base;
+
         //音频
         if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
-            audioChannel = new AudioChannel(stream_index,avCodecContext);
+            audioChannel = new AudioChannel(stream_index,avCodecContext,timeBase);
         }else if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             //帧率： 单位时间内 需要显示多少个图像
             double fps = av_q2d(stream->avg_frame_rate);
@@ -127,7 +129,7 @@ void ZPlayer::_prepare() {
             }
 
             LOGE("==stream_index==%d,avCodecContext=%p",stream_index,avCodecContext);
-            videoChannel = new VideoChannel(stream_index,avCodecContext);
+            videoChannel = new VideoChannel(stream_index,avCodecContext,timeBase,fps);
 //            videoChannel = new VideoChannel(stream_index, callHelper, avCodecContext, stream->time_base, fps);
             videoChannel->setWindow(window);
         }
@@ -158,6 +160,8 @@ void ZPlayer::start() {
     //2、根据数据类型放入Audio/VideoChannel的队列中
     isPlaying = true;
     if(videoChannel){
+        //音视频同步：因为要在videoChannel里获取到audioChannel里到时间戳
+        videoChannel->setAudioChannel(audioChannel);
         videoChannel->play();
     }
     if(audioChannel){

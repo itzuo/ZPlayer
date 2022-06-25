@@ -16,7 +16,7 @@ class AudioChannel : public BaseChannel{
     friend void pcmBufferCallBack(SLAndroidSimpleBufferQueueItf queue, void *pContext);
 
 public:
-    AudioChannel(int streamIndex, AVCodecContext * codecContext);
+    AudioChannel(int streamIndex, AVCodecContext * codecContext,AVRational timeBase);
 
     virtual ~AudioChannel();
 
@@ -49,7 +49,7 @@ private:
     SLPlayItf pcmPlayerPlay = 0;
     //队列结构
     SLAndroidSimpleBufferQueueItf bqPlayerBufferQueue = 0;
-    AVRational time_base;
+//    AVRational time_base;
 
     uint8_t * out_buffer = NULL;
     int out_channels;
@@ -58,6 +58,8 @@ private:
     int out_buffers_size;
     SwrContext *swrContext = 0 ;
 
+public:
+    double audioTime;
 };
 
 

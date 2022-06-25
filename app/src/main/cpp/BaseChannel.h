@@ -15,8 +15,8 @@ extern "C" {
 
 class BaseChannel{
 public:
-    BaseChannel(int streamIndex,AVCodecContext *avCodecContext)
-    :streamIndex(streamIndex),avCodecContext(avCodecContext){
+    BaseChannel(int streamIndex,AVCodecContext *avCodecContext,AVRational time_base)
+    :streamIndex(streamIndex),avCodecContext(avCodecContext),timeBase(time_base){
         packetsQueue.setReleaseHandle(releaseAVPacket);
         frameQueue.setReleaseHandle(releaseAVFrame);
     }
@@ -75,6 +75,9 @@ public:
     SafeQueue<AVFrame *> frameQueue;
     // 音频和视频都会有的标记 是否播放
     bool isPlaying = false;
+
+    //时间基
+    AVRational timeBase;
 };
 
 #endif //ZPLAYER_BASECHANNEL_H

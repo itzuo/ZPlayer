@@ -9,8 +9,8 @@
  * 2.位声/采样格式大小 16bit == 2字节
  * 3.声道数 2 --- 人类就是两个耳朵
  */
-AudioChannel::AudioChannel(int streamIndex, AVCodecContext *codecContext) :
-BaseChannel(streamIndex,codecContext) {
+AudioChannel::AudioChannel(int streamIndex, AVCodecContext *codecContext,AVRational timeBase) :
+BaseChannel(streamIndex,codecContext,timeBase) {
     /*
      * 音频压缩包 AAC
      *
@@ -186,7 +186,9 @@ int AudioChannel::getPCMData() {
 
         pcmDataSize = samples_per_channel * out_sample_size * out_channels;
         //播放这一段声音的时刻
-        double clock = frame->pts * av_q2d(time_base);
+//        double clock = frame->pts * av_q2d(timeBase);
+        audioTime = frame->best_effort_timestamp * av_q2d(timeBase);
+//        LOGE("clock=%f,audioTime=%f",clock,audioTime);
         break;
     }
     releaseAVFrame(&frame);
@@ -226,7 +228,18 @@ int AudioChannel::initOpenSL() {
     //创建buffer缓冲类型的队列作为数据定位器(获取播放数据) 2个缓冲区
     SLDataLocator_AndroidSimpleBufferQueue android_queue = {SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE,2};
 
-    //pcm数据格式: pcm、声道数、采样率、采样位、容器大小、通道掩码(双声道)、字节序(小端)
+    /**
+     * pcm数据格式:pcm、声道数、采样率、采样位、容器大小、通道掩码(双声道)、字节序(小端)
+     * pcm+2(双声道)+44100(采样率)+ 16(采样位)+16(数据的大小)+LEFT|RIGHT(双声道)+小端数据
+     *
+     * SL_DATAFORMAT_PCM：数据格式微pcm格式
+     * 2：双声道
+     * SL_SAMPLINGRATE_44_1：采样率为44100（44.1赫兹 应用最广的，兼容性最好的）
+     * SL_PCMSAMPLEFORMAT_FIXED_16：采样格式为16bit (16位) (2个字节)
+     * SL_PCMSAMPLEFORMAT_FIXED_16：数据大小为16bit (16位) (2个字节)
+     * SL_SPEAKER_FRONT_LEFT | SL_SPEAKER_FRONT_RIGHT：左右声道(双声道)  （双声道  立体声的效果）
+     * SL_BYTEORDER_LITTLEENDIAN：小端模式
+     */
     SLDataFormat_PCM pcm = {SL_DATAFORMAT_PCM,
                             2,
                             SL_SAMPLINGRATE_44_1,

@@ -13,7 +13,7 @@ template<typename T>
 class SafeQueue {
     typedef void (*ReleaseHandle)(T *);
 
-    typedef void (*SyncHandle)(queue<T> *);
+    typedef void (*SyncHandle)(queue<T> &);// 让外界完成丢包
 
 public:
     SafeQueue() {
@@ -89,16 +89,27 @@ public:
         pthread_mutex_unlock(&mutex);
     }
 
+    /**
+     * 同步操作，丢包
+     */
     void sync() {
         pthread_mutex_lock(&mutex);
         syncHandle(q);
         pthread_mutex_unlock(&mutex);
     }
 
+    /**
+     * 设置此函数指针的回调，让外界去释放
+     * @param r
+     */
     void setReleaseHandle(ReleaseHandle r) {
         releaseHandle = r;
     }
 
+    /**
+     * 设置此函数指针的回调，让外界完成丢包
+     * @param s
+     */
     void setSyncHandle(SyncHandle s) {
         syncHandle = s;
     }
