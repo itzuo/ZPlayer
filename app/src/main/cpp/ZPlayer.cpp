@@ -119,6 +119,11 @@ void ZPlayer::_prepare() {
         if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             audioChannel = new AudioChannel(stream_index,avCodecContext,timeBase);
         }else if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
+            // 虽然是视频类型，但是只有一帧封面，这个不应该参与 视频 解码 和 播放，而是跳过你
+            if (stream->disposition & AV_DISPOSITION_ATTACHED_PIC) {
+                continue; // 过滤 封面流
+            }
+
             //帧率： 单位时间内 需要显示多少个图像
             double fps = av_q2d(stream->avg_frame_rate);
             if(isnan(fps) || fps == 0){
