@@ -80,3 +80,21 @@ Java_com_zxj_zplayer_ZPlayer_nativeSetSurface(JNIEnv *env, jobject thiz, jlong n
     zPlayer->setWindow(window);
     pthread_mutex_unlock(&mutex);
 }
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_zxj_zplayer_ZPlayer_getNativeDuration(JNIEnv *env, jobject thiz, jlong native_handle) {
+    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
+    if(zPlayer){
+        return zPlayer->getDuration();
+    }
+    return 0;
+}
+
+extern "C"
+JNIEXPORT jint JNICALL
+Java_com_zxj_zplayer_ZPlayer_NativeSeek(JNIEnv *env, jobject thiz, jint play_value,
+                                        jlong native_handle) {
+
+
+}

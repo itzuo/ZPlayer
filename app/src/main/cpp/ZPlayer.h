@@ -37,6 +37,8 @@ public:
 
     void release();
 
+    int getDuration();
+
 private:
     void _prepare();
     void _start();

@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -18,11 +20,15 @@ import com.zxj.zplayer.databinding.ActivityMainBinding;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBarChangeListener {
 
     private ActivityMainBinding binding;
     private int PERMISSION_REQUEST = 0x1001;
     private ZPlayer mPlayer;
+    // 用户是否拖拽里
+    private boolean isTouch = false;
+    // 获取native层的总时长
+    private int duration ;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,17 +39,24 @@ public class MainActivity extends AppCompatActivity {
 
         checkPermission();
 
+        binding.seekBar.setOnSeekBarChangeListener(this);
+
         mPlayer = new ZPlayer();
         getLifecycle().addObserver(mPlayer);
         mPlayer.setSurfaceView(binding.surfaceView);
-//        mPlayer.setDataSource("/sdcard/demo.mp4");
-        mPlayer.setDataSource("/sdcard/chengdu.mp4");
+        mPlayer.setDataSource("/sdcard/demo.mp4");
+//        mPlayer.setDataSource("/sdcard/chengdu.mp4");
         mPlayer.setOnPrepareListener(new ZPlayer.OnPrepareListener() {
             @Override
             public void onPrepare() {
+                duration = mPlayer.getDuration();
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        binding.seekBarTimeLayout.setVisibility(duration != 0 ? View.VISIBLE : View.GONE);
+                        if(duration != 0){
+                            binding.tvTime.setText("00:00/"+getMinutes(duration)+":"+getSeconds(duration));
+                        }
                         binding.tvState.setTextColor(Color.GREEN);
                         binding.tvState.setText("恭喜init初始化成功");
                     }
@@ -86,5 +99,42 @@ public class MainActivity extends AppCompatActivity {
                 Toast.makeText(this,"申请权限失败",Toast.LENGTH_SHORT).show();
             }
         }
+    }
+
+    private String getSeconds(int duration){
+        int seconds = duration % 60;
+        String str ;
+        if(seconds <= 9){
+            str = "0"+seconds;
+        }else {
+            str = "" + seconds;
+        }
+        return str;
+    }
+
+    private String getMinutes(int duration){
+        int minutes = duration / 60;
+        String str ;
+        if(minutes <= 9){
+            str = "0"+minutes;
+        }else {
+            str = "" + minutes;
+        }
+        return str;
+    }
+
+    @Override
+    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+    }
+
+    @Override
+    public void onStartTrackingTouch(SeekBar seekBar) {
+
+    }
+
+    @Override
+    public void onStopTrackingTouch(SeekBar seekBar) {
+
     }
 }

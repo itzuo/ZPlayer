@@ -23,9 +23,8 @@
         android:layout_width="match_parent"
         android:layout_height="200dp" />
 
-    <!-- 拖动条默认是隐藏的 -->
-    <!-- 进度条功能，后面看，现在先不管哈 -->
     <LinearLayout
+        android:id="@+id/seekBarTimeLayout"
         android:layout_width="match_parent"
         android:layout_height="30dp"
         android:layout_margin="5dp">
@@ -35,16 +34,14 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:text="00:00/00:00"
-            android:visibility="gone" />
+            android:text="00:00/00:00"/>
 
         <SeekBar
             android:id="@+id/seekBar"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:max="100"
-            android:visibility="gone" />
+            android:max="100"/>
     </LinearLayout>
 
 </LinearLayout>

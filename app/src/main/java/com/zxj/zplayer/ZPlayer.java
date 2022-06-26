@@ -145,6 +145,10 @@ public class ZPlayer implements LifecycleObserver, SurfaceHolder.Callback {
         Log.e(TAG,"ZPlayer->surfaceDestroyed");
     }
 
+    public int getDuration() {
+        return getNativeDuration(nativeHandle);
+    }
+
     public interface OnPrepareListener{
         void onPrepare();
     }
@@ -168,4 +172,7 @@ public class ZPlayer implements LifecycleObserver, SurfaceHolder.Callback {
     private native void nativeStop(long nativeHandle);
     private  native void nativeRelease(long nativeHandle);
     private native void nativeSetSurface(long nativeHandle, Surface surface);
+    private native int getNativeDuration(long nativeHandle);
+    private native int NativeSeek(int playValue,long nativeHandle);
+
 }

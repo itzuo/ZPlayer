@@ -70,6 +70,10 @@ void ZPlayer::_prepare() {
         return;
     }
 
+    // 需要在avformat_find_stream_info后获取视频时长，否则.mp4可以获取到，但是.flv获取不到
+    // 视频时长（单位：微妙us，转换为秒需要除以时间基AV_TIME_BASE=1000000）
+    duration = avFormatContext->duration / AV_TIME_BASE;
+
     //经过avformat_find_stream_info方法后，formatContext->nb_streams就有值了
     unsigned int streams = avFormatContext->nb_streams;
 
@@ -234,5 +238,9 @@ void ZPlayer::setWindow(ANativeWindow *window) {
     if (videoChannel) {
         videoChannel->setWindow(window);
     }
+}
+
+int ZPlayer::getDuration() {
+    return duration;
 }
 
