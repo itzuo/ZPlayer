@@ -196,7 +196,9 @@ void VideoChannel::_play() {
             } else{   // 说明：0~1之间，音频与视频差距不大，所有可以拿（当前帧实际延时时间 + 音视频差值）
                 av_usleep((real_delay + time_diff) * 1000000); // 单位是微妙：所以 * 1000000
             }
-        }else if (time_diff < 0) {
+        }
+
+        if (time_diff < 0) {
             // 视频时间 < 音频时间： 要追音频，所以控制视频播放快一点（追音频） 【丢包】
             // 丢帧：不能睡意丢，I帧是绝对不能丢
             // 丢包：在frames 和 packets 中的队列
@@ -216,6 +218,7 @@ void VideoChannel::_play() {
         } else {
             // 百分百同步，这个基本上很难做的
             LOGE("百分百同步了");
+            av_usleep(real_delay * 1000000);
         }
 
         //todo 参数2、指针数据，比如RGBA，每一个维度的数据就是一个指针，那么RGBA需要4个指针，所以就是4个元素的数组，数组的元素就是指针，指针数据
