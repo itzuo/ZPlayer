@@ -76,6 +76,24 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
                 });
             }
         });
+        mPlayer.setOnProgressListener(new ZPlayer.OnProgressListener() {
+            @Override
+            public void onProgress(int progress) {
+                if (!isTouch){
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            // 非直播，是本地视频文件
+                            if(duration != 0) {
+                                binding.tvTime.setText(getMinutes(progress) + ":" + getSeconds(progress)
+                                        + "/" + getMinutes(duration) + ":" + getSeconds(duration));
+                                binding.seekBar.setProgress(progress * 100 / duration);
+                            }
+                        }
+                    });
+                }
+            }
+        });
     }
 
     private void checkPermission() {
@@ -123,18 +141,32 @@ public class MainActivity extends AppCompatActivity implements SeekBar.OnSeekBar
         return str;
     }
 
+    /**
+     * 当前拖动条进度发送了改变，毁掉此方法
+     * @param seekBar 控件
+     * @param progress 1～100
+     * @param fromUser 是否用户拖拽导致到改变
+     */
     @Override
     public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-
+        if(fromUser) {
+            binding.tvTime.setText(getMinutes(progress * duration / 100) + ":" + getSeconds(progress * duration / 100)
+                    + "/" + getMinutes(duration) + ":" + getSeconds(duration));
+        }
     }
 
+    //手按下去，毁掉此方法
     @Override
     public void onStartTrackingTouch(SeekBar seekBar) {
-
+        isTouch = true;
     }
 
+    // 手松开(SeekBar当前值)回调此方法
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-
+        isTouch = false;
+        int seekBarProgress = seekBar.getProgress();
+        int playProgress = seekBarProgress * duration / 100;
+        mPlayer.seek(playProgress);
     }
 }

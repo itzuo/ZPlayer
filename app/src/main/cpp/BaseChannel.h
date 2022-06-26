@@ -7,6 +7,7 @@
 
 #include "safe_queue.h"
 #include "macro.h"
+#include "JavaCallHelper.h"
 
 extern "C" {
     #include <libavcodec/avcodec.h>
@@ -27,8 +28,7 @@ public:
             avcodec_free_context(&avCodecContext);
             avCodecContext = 0;
         }
-        packetsQueue.clear();
-        frameQueue.clear();
+       clear();
     };
     /**
      * 释放 队列中 所有的 AVPacket *
@@ -59,6 +59,25 @@ public:
         frameQueue.setEnable(enable);
     }
 
+    void setJavaCallHelper(JavaCallHelper * javaCallHelper){
+        this->javaCallHelper = javaCallHelper;
+    }
+
+    void clear(){
+        packetsQueue.clear();
+        frameQueue.clear();
+    }
+
+    void startWork(){
+        packetsQueue.setEnable(1);
+        frameQueue.setEnable(1);
+    }
+
+    void stopWork(){
+        packetsQueue.setEnable(0);
+        frameQueue.setEnable(0);
+    }
+
     //纯虚方法 相当于 抽象方法
     virtual void play() = 0;
 
@@ -78,6 +97,7 @@ public:
 
     //时间基
     AVRational timeBase;
+    JavaCallHelper *javaCallHelper;
 };
 
 #endif //ZPLAYER_BASECHANNEL_H

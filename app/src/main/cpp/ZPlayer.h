@@ -39,6 +39,8 @@ public:
 
     int getDuration();
 
+    void seek(jint playValue);
+
 private:
     void _prepare();
     void _start();
@@ -57,6 +59,7 @@ private:
     ANativeWindow *window = 0;
 
     int duration;
+    pthread_mutex_t seekMutex;
 };
 
 

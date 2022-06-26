@@ -7,10 +7,12 @@
 ZPlayer::ZPlayer(JavaCallHelper *callHelper) :callHelper(callHelper){
     //初始化网络，不调用这个，FFmpage是无法联网的
     avformat_network_init();
+    pthread_mutex_init(&seekMutex, nullptr);
 }
 
 ZPlayer::~ZPlayer() {
     avformat_network_deinit();
+    pthread_mutex_destroy(&seekMutex);
     //释放
 //    delete this->dataSource;
 //    this->dataSource = nullptr;
@@ -122,6 +124,10 @@ void ZPlayer::_prepare() {
         //音频
         if (codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             audioChannel = new AudioChannel(stream_index,avCodecContext,timeBase);
+            if(duration != 0){
+                // 非直播
+                audioChannel->setJavaCallHelper(callHelper);
+            }
         }else if (codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
             // 虽然是视频类型，但是只有一帧封面，这个不应该参与 视频 解码 和 播放，而是跳过你
             if (stream->disposition & AV_DISPOSITION_ATTACHED_PIC) {
@@ -242,5 +248,57 @@ void ZPlayer::setWindow(ANativeWindow *window) {
 
 int ZPlayer::getDuration() {
     return duration;
+}
+
+void ZPlayer::seek(jint playValue) {
+    //进去必须 在0- duration 范围之类
+    if(playValue < 0 || playValue >= duration){
+        return ;
+    }
+
+    if(!audioChannel && !videoChannel){
+        return;
+    }
+    if(!avFormatContext){
+        return;
+    }
+    pthread_mutex_lock(&seekMutex);
+    //单位是 微妙
+    int64_t seek = playValue * AV_TIME_BASE;
+    /**
+     * 1. avFormatContext 安全问题
+     * 2. -1 代表默认情况，FFmpeg自动选择音频还是视频做seek操作，
+     * 3.   AVSEEK_FLAG_ANY (老实)直接精准到拖动的位置，问题：如果不是关键帧，B帧 可能回造成花屏情况
+     *      AVSEEK_FLAG_BACKWARD (则优， 例如：拖到8的位置是B帧，则找附件的关键帧6，如果找不到它会花屏)
+     *      AVSEEK_FLAG_FRAME 找关键帧(非常不准确，可能会跳的太多)，一般不会直接用，但是会配合用
+     */
+     //(AVSEEK_FLAG_FRAME ｜ AVSEEK_FLAG_BACKWARD)组合使用，会有个缺陷，就是很慢
+    int ret = av_seek_frame(avFormatContext, -1,seek, AVSEEK_FLAG_BACKWARD);
+    //avformat_seek_file(formatContext, -1, INT64_MIN, seek, INT64_MAX, 0);
+    if(ret < 0){
+        return;
+    }
+
+    // 音视频正在播放，用户去seek了，是不是应该停掉播放的数据？
+    // 四个队列还在工作，让它们停下来，seek完成后，重新播放。
+    if(audioChannel){
+        //暂停队列
+        audioChannel->stopWork();
+        // 清空队列
+        audioChannel->clear();
+        //启动队列
+        audioChannel->startWork();
+    }
+    if(videoChannel){
+        //暂停队列
+        videoChannel->stopWork();
+        // 清空队列
+        videoChannel->clear();
+        //启动队列
+        videoChannel->startWork();
+    }
+
+    // 音频、与视频队列中的数据 是不是就可以丢掉了？
+    pthread_mutex_unlock(&seekMutex);
 }
 

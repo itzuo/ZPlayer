@@ -16,6 +16,7 @@ public:
     //回调Java
     void onError(int thread,int errorCode,char * ffmpegError);
     void onPrepare(int thread);
+    void onProgress(int thread,int progress);
 
 private:
     JavaVM *vm  = 0;   // 只有他 才能 跨越线程
@@ -23,6 +24,7 @@ private:
     jobject instace;
     jmethodID onErrorId;
     jmethodID onPrepareId;
+    jmethodID onProgressId;
 };
 
 

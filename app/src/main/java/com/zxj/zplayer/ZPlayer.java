@@ -24,6 +24,7 @@ public class ZPlayer implements LifecycleObserver, SurfaceHolder.Callback {
     private OnPrepareListener listener;
     private OnErrorListener onErrorListener;
     private SurfaceHolder mHolder;
+    private OnProgressListener onProgressListener;
 
     public ZPlayer() {
         nativeHandle = nativeInit();
@@ -129,6 +130,12 @@ public class ZPlayer implements LifecycleObserver, SurfaceHolder.Callback {
         }
     }
 
+    public void onProgress(int progress){
+        if(onProgressListener != null){
+            onProgressListener.onProgress(progress);
+        }
+    }
+
     @Override
     public void surfaceCreated(SurfaceHolder surfaceHolder) {
         Log.e(TAG,"ZPlayer->surfaceCreated");
@@ -149,12 +156,24 @@ public class ZPlayer implements LifecycleObserver, SurfaceHolder.Callback {
         return getNativeDuration(nativeHandle);
     }
 
+    public void seek(int playProgress) {
+        nativeSeek(playProgress,nativeHandle);
+    }
+
     public interface OnPrepareListener{
         void onPrepare();
     }
 
     public void setOnPrepareListener(OnPrepareListener listener){
         this.listener = listener;
+    }
+
+    public interface OnProgressListener{
+        void onProgress(int progress);
+    }
+
+    public void setOnProgressListener(OnProgressListener listener){
+        this.onProgressListener = listener;
     }
 
     public interface OnErrorListener{
@@ -173,6 +192,6 @@ public class ZPlayer implements LifecycleObserver, SurfaceHolder.Callback {
     private  native void nativeRelease(long nativeHandle);
     private native void nativeSetSurface(long nativeHandle, Surface surface);
     private native int getNativeDuration(long nativeHandle);
-    private native int NativeSeek(int playValue,long nativeHandle);
+    private native void nativeSeek(int playValue,long nativeHandle);
 
 }

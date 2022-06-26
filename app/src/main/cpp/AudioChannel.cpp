@@ -189,6 +189,10 @@ int AudioChannel::getPCMData() {
 //        double clock = frame->pts * av_q2d(timeBase);
         audioTime = frame->best_effort_timestamp * av_q2d(timeBase);
 //        LOGE("clock=%f,audioTime=%f",clock,audioTime);
+
+        if(javaCallHelper){
+            javaCallHelper->onProgress(THREAD_CHILD,audioTime);
+        }
         break;
     }
     //就是把AVFrame里面所有动态分配的数据都free掉，然后将其它参数重置为默认值
