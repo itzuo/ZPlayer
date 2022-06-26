@@ -191,6 +191,8 @@ int AudioChannel::getPCMData() {
 //        LOGE("clock=%f,audioTime=%f",clock,audioTime);
         break;
     }
+    //就是把AVFrame里面所有动态分配的数据都free掉，然后将其它参数重置为默认值
+    av_frame_unref(frame);
     releaseAVFrame(&frame);
     return pcmDataSize;
 }

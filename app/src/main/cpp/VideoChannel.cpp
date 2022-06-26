@@ -206,6 +206,11 @@ void VideoChannel::_play() {
             if (fabs(time_diff) <= 0.05) { // fabs对负数的操作（对浮点数取绝对值）
                 // 多线程（安全 同步丢包）
                 frameQueue.sync();
+
+                // 释放当前帧，否则会造成内存泄漏
+                av_frame_unref(frame);
+                releaseAVFrame(&frame);
+
                 continue; // 丢完取下一个包 帧
             }
         } else {
@@ -227,10 +232,14 @@ void VideoChannel::_play() {
 
         //画画
         _onDraw(dst_data[0], dst_linesize[0], avCodecContext->width, avCodecContext->height);
+        //就是把AVFrame里面所有动态分配的数据都free掉，然后将其它参数重置为默认值
+        av_frame_unref(frame);  // 减1 = 0 释放成员执行的堆区
         releaseAVFrame(&frame);// 释放原始包，因为已经被渲染了，没用了
     }
     av_free(&dst_data[0]);
     isPlaying = 0;
+    //就是把AVFrame里面所有动态分配的数据都free掉，然后将其它参数重置为默认值
+    av_frame_unref(frame);  // 减1 = 0 释放成员执行的堆区
     releaseAVFrame(&frame);
     sws_freeContext(swsContext);
 }
