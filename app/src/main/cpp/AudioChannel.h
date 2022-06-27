@@ -27,6 +27,7 @@ public:
 private:
     void _play();
     int initOpenSL();
+    void releaseOpenSL();
     int getPCMData();
     SLresult createEngine();
     void _OpenSLESStart();

@@ -42,8 +42,8 @@ BaseChannel(streamIndex,codecContext,timeBase),fps(fps) {
 
 VideoChannel::~VideoChannel() {
     pthread_mutex_destroy(&surfaceMutex);
+    DELETE(audioChannel);
 }
-
 
 void *videoDecode_t(void *args) {
     VideoChannel *videoChannel = static_cast<VideoChannel *>(args);
@@ -183,7 +183,7 @@ void VideoChannel::_play() {
         // 判断两个时间差值，一个快一个慢（快的等慢的，慢的快点追） == 你追我赶
         double time_diff = video_time - audio_time;
 
-        LOGE("Video:%lf Audio:%lf delay:%lf A-V=%lf",video_time , audio_time, real_delay, time_diff);
+//        LOGE("Video:%lf Audio:%lf delay:%lf A-V=%lf",video_time , audio_time, real_delay, time_diff);
 
         if(time_diff > 0){
             // 视频时间 > 音频时间， 要等音频，所以控制视频播放慢一点（等音频）【睡眠】
@@ -217,7 +217,7 @@ void VideoChannel::_play() {
             }
         } else {
             // 百分百同步，这个基本上很难做的
-            LOGE("百分百同步了");
+//            LOGE("百分百同步了");
             av_usleep(real_delay * 1000000);
         }
 
@@ -248,8 +248,10 @@ void VideoChannel::_play() {
 }
 
 void VideoChannel::stop() {
+    LOGE("VideoChannel::stop");
     isPlaying = false;
-    setEnable(false);
+    stopWork();
+    clear();
     pthread_join(videoDecodeTask, 0);
     pthread_join(videoPlayTask, 0);
 }
@@ -280,7 +282,7 @@ void VideoChannel::_onDraw(uint8_t *dst_data, int dst_linesize, int width, int h
     //ANativeWindow_lock 将buffer与window进行绑定
     if (ANativeWindow_lock(window, &buffer, 0) != 0) {
         ANativeWindow_release(window);
-        window = 0;
+        window = nullptr;
         pthread_mutex_unlock(&surfaceMutex);
         return;
     }

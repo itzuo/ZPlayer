@@ -60,9 +60,18 @@ Java_com_zxj_zplayer_ZPlayer_nativeStop(JNIEnv *env, jobject thiz, jlong native_
 extern "C"
 JNIEXPORT void JNICALL
 Java_com_zxj_zplayer_ZPlayer_nativeRelease(JNIEnv *env, jobject thiz, jlong native_handle) {
-    ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
-    zPlayer->release();
-
+    /*ZPlayer *zPlayer = reinterpret_cast<ZPlayer *>(native_handle);
+    if(zPlayer){
+        zPlayer->release();
+    }*/
+    if(window){
+        ANativeWindow_release(window);
+        window = nullptr;
+    }
+    DELETE(helper);
+    DELETE(zPlayer);
+    DELETE(javaVm);
+    DELETE(window);
 }
 
 extern "C"

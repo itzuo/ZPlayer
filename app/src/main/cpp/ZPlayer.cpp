@@ -59,6 +59,7 @@ void ZPlayer::_prepare() {
     if (ret) {
         LOGE("打开媒体失败:%s", av_err2str(ret));
         callHelper->onError(THREAD_CHILD, FFMPEG_CAN_NOT_OPEN_URL,av_err2str(ret));
+        avformat_close_input(&avFormatContext);
         return;
     }
 
@@ -69,6 +70,7 @@ void ZPlayer::_prepare() {
         // char * errorInfo = av_err2str(r); // 根据你的返回值 得到错误详情
         LOGE("查找流失败:%s", av_err2str(ret));
         callHelper->onError(THREAD_CHILD, FFMPEG_CAN_NOT_FIND_STREAMS, av_err2str(ret));
+        avformat_close_input(&avFormatContext);
         return;
     }
 
@@ -78,6 +80,8 @@ void ZPlayer::_prepare() {
 
     //经过avformat_find_stream_info方法后，formatContext->nb_streams就有值了
     unsigned int streams = avFormatContext->nb_streams;
+
+    AVCodecContext *avCodecContext = nullptr;
 
     //nb_streams :几个流(几段视频/音频)
     for (int stream_index = 0; stream_index < streams; ++stream_index) {
@@ -92,14 +96,17 @@ void ZPlayer::_prepare() {
         if (avCodec == nullptr) {
             LOGE("查找解码器失败:%s", av_err2str(ret));
             callHelper->onError(THREAD_CHILD, FFMPEG_FIND_DECODER_FAIL,av_err2str(ret));
+            avformat_close_input(&avFormatContext);
             return;
         }
 
         //2、获得解码器上下文
-        AVCodecContext *avCodecContext = avcodec_alloc_context3(avCodec);
+        avCodecContext = avcodec_alloc_context3(avCodec);
         if (avCodecContext == nullptr) {
             LOGE("创建解码上下文失败:%s", av_err2str(ret));
             callHelper->onError(THREAD_CHILD, FFMPEG_ALLOC_CODEC_CONTEXT_FAIL,av_err2str(ret));
+            avcodec_free_context(&avCodecContext);
+            avformat_close_input(&avFormatContext);
             return;
         }
 
@@ -108,6 +115,8 @@ void ZPlayer::_prepare() {
         if (ret < 0) {
             LOGE("设置解码上下文参数失败:%s", av_err2str(ret));
             callHelper->onError(THREAD_CHILD, FFMPEG_CODEC_CONTEXT_PARAMETERS_FAIL,av_err2str(ret));
+            avcodec_free_context(&avCodecContext);
+            avformat_close_input(&avFormatContext);
             return;
         }
 
@@ -116,6 +125,8 @@ void ZPlayer::_prepare() {
         if (ret != 0) {
             LOGE("打开解码器失败:%s", av_err2str(ret));
             callHelper->onError(THREAD_CHILD, FFMPEG_OPEN_DECODER_FAIL,av_err2str(ret));
+            avcodec_free_context(&avCodecContext);
+            avformat_close_input(&avFormatContext);
             return;
         }
 
@@ -154,6 +165,10 @@ void ZPlayer::_prepare() {
     if (!audioChannel && !videoChannel) {
         LOGE("没有音视频");
         callHelper->onError(THREAD_CHILD, FFMPEG_NOMEDIA,av_err2str(ret));
+        if(avCodecContext){
+            avcodec_free_context(&avCodecContext);
+        }
+        avformat_close_input(&avFormatContext);
         return;
     }
     LOGE("准备完了通知java 你随时可以开始播放");
@@ -227,16 +242,50 @@ void ZPlayer::_start() {
     }
 
     isPlaying = false;
-    videoChannel->stop();
     audioChannel->stop();
+    videoChannel->stop();
+}
+
+void *async_stop(void *args){
+    ZPlayer *zPlayer = static_cast<ZPlayer *>(args);
+    zPlayer->_stop();
+    /*zPlayer->isPlaying = false;
+    pthread_join(zPlayer->prepareTask,0);
+    pthread_join(zPlayer->startTask,0);
+    if(zPlayer->avFormatContext){
+        avformat_close_input(&zPlayer->avFormatContext);
+        avformat_free_context(zPlayer->avFormatContext);
+        zPlayer->avFormatContext = nullptr;
+    }
+    DELETE(zPlayer->audioChannel);
+    DELETE(zPlayer->videoChannel);*/
+    return 0;
+}
+
+void ZPlayer::_stop() {
+    isPlaying = false;
+    pthread_join(prepareTask,0);
+    pthread_join(startTask,0);
+    if(avFormatContext){
+        avformat_close_input(&avFormatContext);
+        avformat_free_context(avFormatContext);
+        avFormatContext = nullptr;
+    }
+    DELETE(audioChannel);
+    DELETE(videoChannel);
 }
 
 void ZPlayer::stop() {
+    // 只要用户关闭了，就不准你回调给Java层
+    callHelper = nullptr;
+    if(audioChannel){
+        audioChannel->javaCallHelper = nullptr;
+    }
+    if(videoChannel){
+        videoChannel->javaCallHelper = nullptr;
+    }
 
-}
-
-void ZPlayer::release() {
-
+    pthread_create(&pid_stop,0,async_stop,this);
 }
 
 void ZPlayer::setWindow(ANativeWindow *window) {
@@ -274,7 +323,7 @@ void ZPlayer::seek(jint playValue) {
      */
      //(AVSEEK_FLAG_FRAME ｜ AVSEEK_FLAG_BACKWARD)组合使用，会有个缺陷，就是很慢
     int ret = av_seek_frame(avFormatContext, -1,seek, AVSEEK_FLAG_BACKWARD);
-    //avformat_seek_file(formatContext, -1, INT64_MIN, seek, INT64_MAX, 0);
+//    int ret = avformat_seek_file(avFormatContext, -1, INT64_MIN, seek, INT64_MAX, 0);
     if(ret < 0){
         return;
     }

@@ -55,10 +55,12 @@ BaseChannel(streamIndex,codecContext,timeBase) {
 }
 
 AudioChannel::~AudioChannel() {
-
+    if(swrContext){
+        swr_free(&swrContext);
+        swrContext = nullptr;
+    }
+    DELETE(out_buffer);
 }
-
-
 
 void *audioDecode_t(void *args) {
     AudioChannel *audioChannel = static_cast<AudioChannel *>(args);
@@ -318,6 +320,34 @@ void AudioChannel::_OpenSLESStart() {
     pcmBufferCallBack(bqPlayerBufferQueue, this);
 }
 
+void AudioChannel::releaseOpenSL() {
+    // 设置停止状态
+    if(pcmPlayerPlay){
+        (*pcmPlayerPlay)->SetPlayState(pcmPlayerPlay, SL_PLAYSTATE_STOPPED);
+        pcmPlayerPlay = nullptr;
+    }
+
+    // 销毁播放器
+    if(pcmPlayerObject){
+        (*pcmPlayerObject)->Destroy(pcmPlayerObject);
+        pcmPlayerObject = nullptr;
+        bqPlayerBufferQueue = nullptr;
+    }
+
+    // 销毁混音器
+    if(outputMixObject){
+        (*outputMixObject)->Destroy(outputMixObject);
+        outputMixObject = nullptr;
+    }
+
+    //销毁引擎
+    if(engineObject){
+        (*engineObject)->Destroy(engineObject);
+        engineObject = nullptr;
+        engineEngine = nullptr;
+    }
+}
+
 SLresult AudioChannel::createEngine() {
     LOGE("AudioChannel::createEngine()");
     SLresult result;
@@ -344,6 +374,13 @@ SLresult AudioChannel::createEngine() {
 }
 
 void AudioChannel::stop() {
-
+    LOGE("AudioChannel::stop");
+    isPlaying = false;
+    pthread_join(audioDecodeTask, nullptr);
+    pthread_join(audioPlayTask,nullptr);
+    stopWork();
+    clear();
+    releaseOpenSL();
 }
+
 

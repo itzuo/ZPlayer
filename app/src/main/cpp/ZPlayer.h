@@ -35,8 +35,6 @@ public:
 
     void stop();
 
-    void release();
-
     int getDuration();
 
     void seek(jint playValue);
@@ -44,6 +42,7 @@ public:
 private:
     void _prepare();
     void _start();
+    void _stop();
 
 private:
     char *dataSource = 0;

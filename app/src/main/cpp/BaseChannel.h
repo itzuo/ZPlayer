@@ -69,13 +69,11 @@ public:
     }
 
     void startWork(){
-        packetsQueue.setEnable(1);
-        frameQueue.setEnable(1);
+        setEnable(1);
     }
 
     void stopWork(){
-        packetsQueue.setEnable(0);
-        frameQueue.setEnable(0);
+        setEnable(0);
     }
 
     //纯虚方法 相当于 抽象方法
