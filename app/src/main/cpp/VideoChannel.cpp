@@ -249,11 +249,12 @@ void VideoChannel::_play() {
 
 void VideoChannel::stop() {
     LOGE("VideoChannel::stop");
+    // 两个pthread_join要先执行，否则退出时会报错
+    pthread_join(videoDecodeTask, nullptr);
+    pthread_join(videoPlayTask, nullptr);
     isPlaying = false;
     stopWork();
     clear();
-    pthread_join(videoDecodeTask, 0);
-    pthread_join(videoPlayTask, 0);
 }
 
 void VideoChannel::setWindow(ANativeWindow *window) {
@@ -261,6 +262,7 @@ void VideoChannel::setWindow(ANativeWindow *window) {
     pthread_mutex_lock(&surfaceMutex);
     if (this->window) {
         ANativeWindow_release(this->window);
+        this->window = nullptr;
     }
     this->window = window;
     pthread_mutex_unlock(&surfaceMutex);

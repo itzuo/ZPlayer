@@ -172,8 +172,10 @@ void ZPlayer::_prepare() {
         return;
     }
     LOGE("准备完了通知java 你随时可以开始播放");
-    // 准备完了 通知java 你随时可以开始播放
-    callHelper->onPrepare(THREAD_CHILD);
+    if(callHelper){
+        // 准备完了 通知java 你随时可以开始播放
+        callHelper->onPrepare(THREAD_CHILD);
+    }
 }
 
 void *start_t(void *args){

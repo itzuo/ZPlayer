@@ -64,10 +64,12 @@ Java_com_zxj_zplayer_ZPlayer_nativeRelease(JNIEnv *env, jobject thiz, jlong nati
     if(zPlayer){
         zPlayer->release();
     }*/
+    pthread_mutex_lock(&mutex);
     if(window){
         ANativeWindow_release(window);
         window = nullptr;
     }
+    pthread_mutex_unlock(&mutex);
     DELETE(helper);
     DELETE(zPlayer);
     DELETE(javaVm);
@@ -81,6 +83,7 @@ Java_com_zxj_zplayer_ZPlayer_nativeSetSurface(JNIEnv *env, jobject thiz, jlong n
     pthread_mutex_lock(&mutex);
     //先释放之前的显示窗口
     if(window){
+        LOGE("nativeSetSurface->window=%p",window);
         ANativeWindow_release(window);
         window = nullptr;
     }

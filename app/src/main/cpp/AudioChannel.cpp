@@ -320,6 +320,12 @@ void AudioChannel::_OpenSLESStart() {
     pcmBufferCallBack(bqPlayerBufferQueue, this);
 }
 
+void AudioChannel::pauseOpenSL() {
+    if(pcmPlayerPlay){
+        (*pcmPlayerPlay)->SetPlayState(pcmPlayerPlay, SL_PLAYSTATE_PAUSED);
+    }
+}
+
 void AudioChannel::releaseOpenSL() {
     // 设置停止状态
     if(pcmPlayerPlay){
@@ -375,9 +381,12 @@ SLresult AudioChannel::createEngine() {
 
 void AudioChannel::stop() {
     LOGE("AudioChannel::stop");
-    isPlaying = false;
+    pauseOpenSL();
+    // 两个pthread_join要先执行，否则退出时会报错
     pthread_join(audioDecodeTask, nullptr);
     pthread_join(audioPlayTask,nullptr);
+    LOGE("AudioChannel::stop====");
+    isPlaying = false;
     stopWork();
     clear();
     releaseOpenSL();
