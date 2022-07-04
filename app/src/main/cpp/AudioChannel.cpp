@@ -3,6 +3,8 @@
 //
 
 #include "AudioChannel.h"
+#define LOG_TAG "AudioChannel"
+
 /**
  * 音频三要素
  * 1.采样率  44100 48000

@@ -1,6 +1,7 @@
 #include <jni.h>
 #include <string>
 #include "ZPlayer.h"
+#define LOG_TAG "native-lib"
 
 ZPlayer *zPlayer = nullptr;
 JavaVM *javaVm = nullptr;

@@ -4,9 +4,15 @@
 
 #include <android/log.h>
 
+#ifndef LOG_TAG
+    #define  LOG_TAG "main"
+#endif
+
+#define _LOG_TAG_ "zPlayer-" LOG_TAG
 
 //#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,__FILE__,__VA_ARGS__)
-#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,"FFEPEG",__VA_ARGS__)
+//#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,_LOG_TAG_,__VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR,__FILE_NAME__,__VA_ARGS__)
 
 //宏函数
 #define DELETE(obj) if(obj){ delete obj; obj = 0; }

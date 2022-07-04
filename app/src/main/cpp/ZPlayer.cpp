@@ -3,6 +3,7 @@
 //
 
 #include "ZPlayer.h"
+#define LOG_TAG "ZPlayer"
 
 ZPlayer::ZPlayer(JavaCallHelper *callHelper) :callHelper(callHelper){
     //初始化网络，不调用这个，FFmpage是无法联网的

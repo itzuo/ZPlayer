@@ -3,6 +3,7 @@
 //
 
 #include "JavaCallHelper.h"
+#define LOG_TAG "JavaCallHelper"
 
 JavaCallHelper::JavaCallHelper(JavaVM *vm, JNIEnv *env, jobject instace) {
     this->vm = vm;

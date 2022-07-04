@@ -3,7 +3,7 @@
 //
 
 #include "VideoChannel.h"
-
+#define LOG_TAG "VideoChannel"
 /**
  * 丢包 AVFrame * 原始包 很简单，因为不需要考虑 关键帧
  * @param q
